@@ -1,40 +1,116 @@
-/*
- * This is an example of an AssemblyScript smart contract with two simple,
- * symmetric functions:
- *
- * 1. setGreeting: accepts a greeting, such as "howdy", and records it for the
- *    user (account_id) who sent the request
- * 2. getGreeting: accepts an account_id and returns the greeting saved for it,
- *    defaulting to "Hello"
- *
- * Learn more about writing NEAR smart contracts with AssemblyScript:
- * https://docs.near.org/docs/develop/contracts/as/intro
- *
+import {
+  Product,
+  productsMap,
+  products,
+  ProductsResult,
+  orders,
+  ordersMap,
+  Order,
+} from "./model";
+import {
+  logging,
+  storage,
+  ContractPromiseBatch,
+  Context,
+  u128,
+} from "near-sdk-as";
+
+// --- contract code goes below
+
+// The maximum number of latest messages the contract returns.
+const MESSAGE_LIMIT: i32 = 50;
+
+/**
+ * Adds a new product under the name of the sender's account id.\
+ * NOTE: This is a change method. Which means it will modify the state.\
+ * But right now we don't distinguish them with annotations yet.
  */
+export function addProduct(
+  _name: string,
+  _price: u128,
+  _coin: string,
+  _description: string
+): Product {
+  // Creating a new product and populating fields with our data
+  let lastId: u32 = storage.getPrimitive<u32>("lastId", 100);
+  const product = new Product(
+    lastId,
+    _name,
+    _price,
+    _coin,
+    _description
+  );
 
-import { Context, logging, storage } from 'near-sdk-as'
+  // Adding the message to end of the the persistent collection
+  productsMap.set(lastId, product);
+  products.push(product);
 
-const DEFAULT_MESSAGE = 'Hello'
+  logging.log("[ADD_PRODUCT]: " + product.toString());
 
-// Exported functions will be part of the public interface for your smart contract.
-// Feel free to extract behavior to non-exported functions!
-export function getGreeting(accountId: string): string | null {
-  // This uses raw `storage.get`, a low-level way to interact with on-chain
-  // storage for simple contracts.
-  // If you have something more complex, check out persistent collections:
-  // https://docs.near.org/docs/concepts/data-storage#assemblyscript-collection-types
-  return storage.get<string>(accountId, DEFAULT_MESSAGE)
+  // new uuid
+  storage.set<u32>("lastId", lastId + 1);
+
+  return product;
 }
 
-export function setGreeting(message: string): void {
-  const account_id = Context.sender
+/**
+ * Returns an array of last N messages.\
+ * NOTE: This is a view method. Which means it should NOT modify the state.
+ */
+export function getProducts(_page: i32, _limit: i32): ProductsResult {
+  const response = new ProductsResult();
 
-  // Use logging.log to record logs permanently to the blockchain!
-  logging.log(
-    // String interpolation (`like ${this}`) is a work in progress:
-    // https://github.com/AssemblyScript/assemblyscript/pull/1115
-    'Saving greeting "' + message + '" for account "' + account_id + '"'
-  )
+  if (!_page) _page = 1;
+  if (!_limit) _limit = MESSAGE_LIMIT;
+  // limit the limit params
+  if (_limit > MESSAGE_LIMIT) _limit = MESSAGE_LIMIT;
 
-  storage.set(account_id, message)
+  const offset = _limit * _page - _limit;
+  let numProducts = _limit * _page;
+  if (products.length < _limit * _page) numProducts = products.length;
+
+  if (numProducts - offset > 0) {
+    const result = new Array<Product>(numProducts - offset);
+
+    let index = 0;
+
+    for (let i: i32 = offset; i < numProducts; i++) {
+      result[index] = products[i];
+      index++;
+    }
+
+    response.products = result;
+  }
+  response.success = true;
+  response.limit = _limit;
+  response.page = _page;
+  logging.log("[GET_PRODUCTS]: " + response.toString());
+  return response;
+}
+
+export function newOrder(_productId: u32): void {
+  assert(_productId, "[productId] is required");
+
+  const product = productsMap.get(_productId, null);
+
+  assert(product, "[product] not found");
+
+  if (!product) return;
+  if (!product.price) return;
+  logging.log(Context.accountBalance);
+  logging.log(product.price);
+  assert(Context.accountBalance > product.price, "Out of money");
+
+  const promise = ContractPromiseBatch.create(Context.contractName).transfer(
+    product.price
+  ); // send 1 near
+  logging.log("[ContractPromiseBatch]: ");
+  logging.log(promise.id);
+
+  const order = new Order(product.id);
+  logging.log("[Order]: ");
+  logging.log(order);
+
+  orders.push(order);
+  ordersMap.set(order.getKey(), order);
 }

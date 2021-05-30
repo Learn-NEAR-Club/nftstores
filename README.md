@@ -100,3 +100,20 @@ On Windows, if you're seeing an error containing `EPERM` it may be related to sp
   [NEAR Wallet]: https://wallet.testnet.near.org/
   [near-cli]: https://github.com/near/near-cli
   [gh-pages]: https://github.com/tschaub/gh-pages
+
+
+near call dev-1622382187667-2653102 getProducts '{"_page": 1, "_limit": 10}' --account-id support.testnet
+
+near call dev-1622382187667-2653102 addProduct '{"_name": "hello world product3", "_price": "10000000000000000000000000", "_coin": null, "_description": "just testing description 3"}' --account-id support.testnet
+
+near call dev-1622382187667-2653102 addProduct '{"_name": "hello world product3", "_price": "20000000000000000000000000", "_coin": null, "_description": "just testing description 3"}' --account-id support.testnet
+
+near call dev-1622382187667-2653102 addProduct '{"_name": "hello world product3", "_price": "30000000000000000000000000", "_coin": null, "_description": "just testing description 3"}' --account-id support.testnet
+
+near call dev-1622382187667-2653102 newOrder '{"_productId": 105}' --account-id support.testnet
+
+near call dev-1622382187667-2653102 newOrder '{"_productId": 104}' --account-id support.testnet
+
+near call dev-1622382187667-2653102 newOrder '{"_productId": 106}' --account-id support.testnet
+
+
