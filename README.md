@@ -1,6 +1,6 @@
 NftStore
 
-Decentralized ecommerce platform allow user to create small store quick with custom domain and support near payment
+Decentralized e-commerce platform allow user to create small store quick with custom domain and support near payment
 
 ==================
 alway.near
