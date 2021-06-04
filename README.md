@@ -6,11 +6,6 @@ Decentralized e-commerce platform allow user to create small store quick with cu
 alway.near
 ==================
 
-
-This [React] app was initialized with [create-near-app]
-
-
-
 near call dev-1622382187667-2653102 getProducts '{"_page": 1, "_limit": 10}' --account-id support.testnet
 
 near call dev-1622382187667-2653102 addProduct '{"_name": "hello world product3", "_price": "10000000000000000000000000", "_coin": null, "_description": "just testing description 3"}' --account-id support.testnet
