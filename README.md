@@ -2,6 +2,8 @@ NftStore
 
 Decentralized e-commerce platform allow user to create small store quick with custom domain and support near payment
 
+https://www.figma.com/file/AUt66EE5vQVZPxb2PQ95nZ/Crypter_-NFT-marketplace-kit-(UI8)?node-id=1710%3A2347
+
 ==================
 alway.near
 ==================
