@@ -4,11 +4,11 @@ Decentralized e-commerce platform allow user to create small store quick with cu
 
 https://www.figma.com/file/AUt66EE5vQVZPxb2PQ95nZ/Crypter_-NFT-marketplace-kit-(UI8)?node-id=1710%3A2347
 
-<iframe style="border: 1px solid rgba(0, 0, 0, 0.1);" width="800" height="450" src="https://www.figma.com/embed?embed_host=share&url=https%3A%2F%2Fwww.figma.com%2Ffile%2FAUt66EE5vQVZPxb2PQ95nZ%2FCrypter_-NFT-marketplace-kit-UI8%3Fnode-id%3D1710%253A2347" allowfullscreen></iframe>
-
 ==================
+
 alway.near
 duythien.near
+
 ==================
 
 near call dev-1622382187667-2653102 getProducts '{"_page": 1, "_limit": 10}' --account-id support.testnet
