@@ -8,6 +8,7 @@ https://www.figma.com/file/AUt66EE5vQVZPxb2PQ95nZ/Crypter_-NFT-marketplace-kit-(
 
 ==================
 alway.near
+duythien.near
 ==================
 
 near call dev-1622382187667-2653102 getProducts '{"_page": 1, "_limit": 10}' --account-id support.testnet
