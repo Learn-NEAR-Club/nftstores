@@ -124,7 +124,7 @@ export const settings = new PersistentVector<Setting>("s");
 export const settingsMap = new PersistentVector<Setting>("sm");
 
 /**
- * All interface for return data
+ * Interface for return data
  *
  *
  */

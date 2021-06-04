@@ -68,7 +68,7 @@ export function getProducts(_page: i32, _limit: i32): ProductsResult {
   return response;
 }
 
-export function newOrder(_productId: u32): Order {
+export function newOrder(_productId: i32): Order {
   assert(_productId, "[productId] is required");
   assert(productsMap.contains(_productId), "[productId] not found");
 
