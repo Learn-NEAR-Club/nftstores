@@ -1,12 +1,4 @@
-import {
-  Product,
-  productsMap,
-  products,
-  ProductsResult,
-  orders,
-  ordersMap,
-  Order,
-} from "./model";
+import { Product, productsMap, products, ProductsResult, Order } from "./model";
 import {
   logging,
   storage,
@@ -19,6 +11,7 @@ import {
 
 // The maximum number of latest messages the contract returns.
 const MESSAGE_LIMIT: i32 = 50;
+const XCC_GAS: u64 = 20_000_000_000_000;
 
 /**
  * Adds a new product under the name of the sender's account id.\
@@ -29,33 +22,20 @@ export function addProduct(
   _name: string,
   _price: u128,
   _coin: string,
-  _description: string
+  _description: string,
+  _options: string[]
 ): Product {
-  // Creating a new product and populating fields with our data
-  let lastId: u32 = storage.getPrimitive<u32>("lastId", 100);
-  const product = new Product(
-    lastId,
-    _name,
-    _price,
-    _coin,
-    _description
-  );
+  const product = new Product(_name, _price, _coin, _description, _options);
 
-  // Adding the message to end of the the persistent collection
-  productsMap.set(lastId, product);
-  products.push(product);
+  product.save();
 
   logging.log("[ADD_PRODUCT]: " + product.toString());
-
-  // new uuid
-  storage.set<u32>("lastId", lastId + 1);
 
   return product;
 }
 
 /**
- * Returns an array of last N messages.\
- * NOTE: This is a view method. Which means it should NOT modify the state.
+ * Returns an array of Product with page and limit.
  */
 export function getProducts(_page: i32, _limit: i32): ProductsResult {
   const response = new ProductsResult();
@@ -88,29 +68,33 @@ export function getProducts(_page: i32, _limit: i32): ProductsResult {
   return response;
 }
 
-export function newOrder(_productId: u32): void {
+export function newOrder(_productId: u32): Order {
   assert(_productId, "[productId] is required");
+  assert(productsMap.contains(_productId), "[productId] not found");
 
-  const product = productsMap.get(_productId, null);
+  const product = productsMap.getSome(_productId);
 
-  assert(product, "[product] not found");
-
-  if (!product) return;
-  if (!product.price) return;
-  logging.log(Context.accountBalance);
-  logging.log(product.price);
-  assert(Context.accountBalance > product.price, "Out of money");
-
-  const promise = ContractPromiseBatch.create(Context.contractName).transfer(
-    product.price
-  ); // send 1 near
-  logging.log("[ContractPromiseBatch]: ");
-  logging.log(promise.id);
+  assert(
+    Context.attachedDeposit >= product.price,
+    `Product price is ${product.price}`
+  );
 
   const order = new Order(product.id);
-  logging.log("[Order]: ");
-  logging.log(order);
+  order.save();
 
-  orders.push(order);
-  ordersMap.set(order.getKey(), order);
+  // * Refund if they send more than product.price
+  if (Context.attachedDeposit <= product.price) return order;
+
+  const to_self = Context.contractName;
+  const to_buyer = Context.sender;
+
+  ContractPromiseBatch.create(to_buyer)
+    .transfer(u128.sub(Context.attachedDeposit, product.price))
+    .then(to_self)
+    .function_call("on_refund_complete", order, u128.Zero, XCC_GAS);
+  return order;
+}
+
+export function on_refund_complete(productId: u64): void {
+  logging.log(`[${productId}] refund complete`);
 }

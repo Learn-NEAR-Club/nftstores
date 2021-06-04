@@ -1,34 +1,36 @@
 import { context, u128, PersistentVector, PersistentMap } from "near-sdk-as";
 
-/**
- * Exporting a new class Product so it can be used outside of this file.
- */
+// ----------------------------------------------------------------------------
+// Product
+// ----------------------------------------------------------------------------
 @nearBindgen
 export class Product {
-  id: u64;
+  id: i32;
   sender: string;
   name: string;
-  coin: string; // Buy with diff coin
+  coin: string;
   price: u128;
   description: string;
+  options: string[];
+  createdAt: u64 = context.blockTimestamp;
 
   constructor(
-    public _id: u64,
-    public _name: string,
-    public _price: u128,
-    public _coin: string,
-    public _description: string
+    _name: string,
+    _price: u128,
+    _coin: string,
+    _description: string,
+    _options: string[]
   ) {
-    assert(_id, "[id] is required");
     assert(_name, "[name] is required");
     assert(_price, "[price] is required");
     assert(_price > u128.from(0), "[price] must be greater than 0");
 
-    this.id = _id;
+    this.id = products.length;
     this.name = _name;
     this.price = _price;
     this.description = _description;
     this.sender = context.sender;
+    this.options = _options || [];
 
     // Use Near as default
     if (!_coin) this.coin = "NEAR";
@@ -38,22 +40,94 @@ export class Product {
   public toString(): string {
     return `id: ${this.id}, name: ${this.name}, price: ${this.price}, coin: ${this.coin}, description: ${this.description}`;
   }
+
+  public save(): void {
+    products.push(this);
+    productsMap.set(this.id, this);
+  }
 }
 
+// ----------------------------------------------------------------------------
+// Order
+// ----------------------------------------------------------------------------
 @nearBindgen
 export class Order {
-  productId: u64;
-  owner: string;
-  constructor(public _id: u64) {
+  id: i32;
+  productId: i32;
+  customerId: string;
+  shippingAddress: string;
+  orderEmail: string;
+
+  createdAt: u64 = context.blockTimestamp;
+
+  constructor(_id: i32) {
+    this.id = orders.length;
     this.productId = _id;
-    this.owner = context.sender;
+    this.customerId = context.sender;
   }
 
   public getKey(): string {
-    return `${this.productId}_${this.owner}_${context.blockTimestamp}`;
+    return `${this.productId}_${this.customerId}_${context.blockTimestamp}`;
+  }
+
+  public save(): void {
+    orders.push(this);
+    ordersMap.set(this.id, this);
   }
 }
 
+// ----------------------------------------------------------------------------
+// OrderDetail
+// ----------------------------------------------------------------------------
+@nearBindgen
+export class OrderDetail {
+  id: i32;
+  orderId: i32;
+  productId: i32;
+  quantity: number;
+  createdAt: u64 = context.blockTimestamp;
+
+  constructor(_orderId: i32, _productId: i32, _quantity: number) {
+    this.id = orderDetails.length;
+    this.orderId = _orderId;
+    this.productId = _productId;
+    this.quantity = _quantity || 1;
+  }
+
+  public getKey(): string {
+    return `${this.productId}_${context.blockTimestamp}`;
+  }
+
+  public save(): void {
+    orderDetails.push(this);
+    orderDetailsMap.set(this.id, this);
+  }
+}
+
+export class Setting {
+  domain: string; // custom domain like example_near_swag.com
+}
+
+// ----------------------------------------------------------------------------
+// Data
+// ----------------------------------------------------------------------------
+export const products = new PersistentVector<Product>("p");
+export const productsMap = new PersistentMap<u32, Product>("pm");
+
+export const orders = new PersistentVector<Order>("o");
+export const ordersMap = new PersistentMap<u32, Order>("om");
+
+export const orderDetails = new PersistentVector<OrderDetail>("od"); // Map <orderID, OrderDetail>
+export const orderDetailsMap = new PersistentMap<u32, OrderDetail>("odm"); // Map <orderID, OrderDetail>
+
+export const settings = new PersistentVector<Setting>("s");
+export const settingsMap = new PersistentVector<Setting>("sm");
+
+/**
+ * All interface for return data
+ *
+ *
+ */
 @nearBindgen
 export class ProductsResult {
   products: Product[];
@@ -71,14 +145,3 @@ export class ProductsResult {
     return `products: ${this.products.length}, page: ${this.page}, limit: ${this.limit}, success: ${this.success}`;
   }
 }
-
-/**
- * collections.vector is a persistent collection. Any changes to it will
- * be automatically saved in the storage.
- * The parameter to the constructor needs to be unique across a single contract.
- * It will be used as a prefix to all keys required to store data in the storage.
- */
-export const products = new PersistentVector<Product>("p");
-export const productsMap = new PersistentMap<u32, Product>("pm");
-export const orders = new PersistentVector<Order>("o");
-export const ordersMap = new PersistentMap<string, Order>("om");
